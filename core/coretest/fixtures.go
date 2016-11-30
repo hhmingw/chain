@@ -8,9 +8,11 @@ import (
 
 	"chain/core/account"
 	"chain/core/asset"
+	"chain/core/pb"
 	"chain/core/pin"
 	"chain/core/txbuilder"
 	"chain/crypto/ed25519/chainkd"
+	"chain/errors"
 	"chain/protocol"
 	"chain/protocol/bc"
 	"chain/protocol/state"
@@ -58,14 +60,20 @@ func IssueAssets(ctx context.Context, t testing.TB, c *protocol.Chain, s txbuild
 
 	SignTxTemplate(t, ctx, tpl, &testutil.TestXPrv)
 
-	err = txbuilder.FinalizeTx(ctx, c, s, bc.NewTx(*tpl.Transaction))
+	txdata, err := bc.NewTxDataFromBytes(tpl.RawTransaction)
+	if err != nil {
+		t.Log(errors.Stack(err))
+		t.Fatal(err)
+	}
+
+	err = txbuilder.FinalizeTx(ctx, c, s, bc.NewTx(*txdata))
 	if err != nil {
 		testutil.FatalErr(t, err)
 	}
 
 	return state.Output{
-		Outpoint: bc.Outpoint{Hash: tpl.Transaction.Hash(), Index: 0},
-		TxOutput: *tpl.Transaction.Outputs[0],
+		Outpoint: bc.Outpoint{Hash: txdata.Hash(), Index: 0},
+		TxOutput: *txdata.Outputs[0],
 	}
 }
 
@@ -77,7 +85,13 @@ func Transfer(ctx context.Context, t testing.TB, c *protocol.Chain, s txbuilder.
 
 	SignTxTemplate(t, ctx, template, &testutil.TestXPrv)
 
-	tx := bc.NewTx(*template.Transaction)
+	txdata, err := bc.NewTxDataFromBytes(template.RawTransaction)
+	if err != nil {
+		t.Log(errors.Stack(err))
+		t.Fatal(err)
+	}
+
+	tx := bc.NewTx(*txdata)
 	err = txbuilder.FinalizeTx(ctx, c, s, tx)
 	if err != nil {
 		testutil.FatalErr(t, err)
@@ -86,7 +100,7 @@ func Transfer(ctx context.Context, t testing.TB, c *protocol.Chain, s txbuilder.
 	return tx
 }
 
-func SignTxTemplate(t testing.TB, ctx context.Context, template *txbuilder.Template, priv *chainkd.XPrv) {
+func SignTxTemplate(t testing.TB, ctx context.Context, template *pb.TxTemplate, priv *chainkd.XPrv) {
 	if priv == nil {
 		priv = &testutil.TestXPrv
 	}

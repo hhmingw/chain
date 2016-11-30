@@ -8,13 +8,19 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"chain/core/accesstoken"
 	"chain/errors"
 )
 
 var errNotAuthenticated = errors.New("not authenticated")
 
-const tokenExpiry = time.Minute * 5
+const (
+	tokenExpiry = time.Minute * 5
+	userKey     = iota
+	pwKey
+)
 
 type apiAuthn struct {
 	tokens *accesstoken.CredentialStore
@@ -31,28 +37,28 @@ type tokenResult struct {
 	lastLookup time.Time
 }
 
-func (a *apiAuthn) handler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		err := a.auth(req)
-		if err != nil {
-			WriteHTTPError(req.Context(), rw, err)
-			return
-		}
-		next.ServeHTTP(rw, req)
-	})
-}
-
-func (a *apiAuthn) auth(req *http.Request) error {
-	user, pw, ok := req.BasicAuth()
-	if !ok && a.alt(req) {
-		return nil
+func (a *apiAuthn) authRPC(ctx context.Context, method string) (context.Context, error) {
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		return ctx, errNotAuthenticated
 	}
 
-	typ := "client"
-	if strings.HasPrefix(req.URL.Path, networkRPCPrefix) {
+	var user, pw string
+	if len(md["username"]) > 0 && len(md["password"]) > 0 {
+		user = md["username"][0]
+		pw = md["password"][0]
+	}
+
+	typ := "app"
+
+	if strings.HasPrefix(method, "/pb.Node/") || strings.HasPrefix(method, "/pb.Signer/") {
 		typ = "network"
 	}
-	return a.cachedAuthCheck(req.Context(), typ, user, pw)
+
+	ctx = context.WithValue(ctx, userKey, user)
+	ctx = context.WithValue(ctx, pwKey, pw)
+
+	return ctx, a.cachedAuthCheck(ctx, typ, user, pw)
 }
 
 func (a *apiAuthn) authCheck(ctx context.Context, typ, user, pw string) (bool, error) {
@@ -81,4 +87,8 @@ func (a *apiAuthn) cachedAuthCheck(ctx context.Context, typ, user, pw string) er
 		return errNotAuthenticated
 	}
 	return nil
+}
+
+func userPwFromContext(ctx context.Context) (user string, pw string) {
+	return ctx.Value(userKey).(string), ctx.Value(pwKey).(string)
 }

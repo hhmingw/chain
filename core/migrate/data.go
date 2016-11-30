@@ -96,4 +96,10 @@ var migrations = []migration{
 		ALTER TABLE assets ALTER COLUMN initial_block_hash SET DATA TYPE bytea USING decode(initial_block_hash, 'hex');
 		ALTER TABLE config ALTER COLUMN blockchain_id SET DATA TYPE bytea USING decode(blockchain_id, 'hex');
 	`},
+	{Name: "2017-01-11.1.core.config-key.sql", SQL: `
+		ALTER TABLE config ALTER COLUMN block_pub DROP DEFAULT;
+		ALTER TABLE config
+			ALTER COLUMN block_pub SET DATA TYPE bytea USING decode(block_pub,'hex'),
+			ALTER COLUMN block_pub SET DEFAULT '\x';
+	`},
 }

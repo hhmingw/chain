@@ -342,7 +342,7 @@ CREATE TABLE config (
     blockchain_id bytea NOT NULL,
     configured_at timestamp with time zone NOT NULL,
     generator_url text DEFAULT ''::text NOT NULL,
-    block_pub text DEFAULT ''::text NOT NULL,
+    block_pub bytea DEFAULT '\x'::bytea NOT NULL,
     remote_block_signers bytea DEFAULT '\x'::bytea NOT NULL,
     generator_access_token text DEFAULT ''::text NOT NULL,
     max_issuance_window_ms bigint,
@@ -879,3 +879,4 @@ insert into migrations (filename, hash) values ('2016-11-28.0.core.submitted-txs
 insert into migrations (filename, hash) values ('2017-01-05.0.core.rename_block_key.sql', 'ba6a62e498236ec9d2f13238a945829a5cab83f897068fef57a2c152a2e36037');
 insert into migrations (filename, hash) values ('2017-01-10.0.signers.xpubs-type.sql', '4a4d6c736a2bf65e69abbdc87771faa1dc17a0106b2651a6a58af067708d095a');
 insert into migrations (filename, hash) values ('2017-01-11.0.core.hash-bytea.sql', '9f7f15df3479c38f193884a2d3cb7ae8001ed08607f9cc661fd5c420e248688d');
+insert into migrations (filename, hash) values ('2017-01-11.1.core.config-key.sql', '0ebc08a7e27c944708b40a760a35025909d80378cf4e47f36cabc85e19b2cfa3');
