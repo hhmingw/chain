@@ -120,43 +120,41 @@ func (h *Handler) ListAccounts(ctx context.Context, in *pb.ListAccountsQuery) (*
 		return nil, errors.Wrap(err, "running acc query")
 	}
 
-	result := make([]*accountResponse, 0, len(accounts))
+	result := make([]*pb.Account, 0, len(accounts))
 	for _, a := range accounts {
-		var orderedKeys []accountKey
-		keys, ok := a["keys"].([]interface{})
-		if ok {
-			for _, key := range keys {
-				mapKey, ok := key.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				orderedKeys = append(orderedKeys, accountKey{
-					RootXPub:              mapKey["root_xpub"],
-					AccountXPub:           mapKey["account_xpub"],
-					AccountDerivationPath: mapKey["account_derivation_path"],
-				})
-			}
+		var resp accountResponse
+		err := json.Unmarshal(a, &resp)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshaling indexed account")
 		}
-		r := &accountResponse{
-			ID:     a["id"],
-			Alias:  a["alias"],
-			Keys:   orderedKeys,
-			Quorum: a["quorum"],
-			Tags:   a["tags"],
-		}
-		result = append(result, r)
-	}
 
-	data, err := json.Marshal(httpjson.Array(result))
-	if err != nil {
-		return nil, errors.Wrap(err)
+		var keys []*pb.Account_Key
+		for _, k := range resp.Keys {
+			adp := make([][]byte, 0, len(k.AccountDerivationPath))
+			for _, p := range k.AccountDerivationPath {
+				adp = append(adp, p)
+			}
+			keys = append(keys, &pb.Account_Key{
+				RootXpub:              k.RootXPub,
+				AccountXpub:           k.AccountXPub,
+				AccountDerivationPath: adp,
+			})
+		}
+
+		result = append(result, &pb.Account{
+			Id:     resp.ID,
+			Alias:  resp.Alias,
+			Keys:   keys,
+			Quorum: resp.Quorum,
+			Tags:   resp.Tags,
+		})
 	}
 
 	// Pull in the accounts by the IDs
 	out := in
 	out.After = after
 	return &pb.ListAccountsResponse{
-		Items:    data,
+		Items:    result,
 		LastPage: len(result) < limit,
 		Next:     out,
 	}, nil
@@ -178,53 +176,48 @@ func (h *Handler) ListAssets(ctx context.Context, in *pb.ListAssetsQuery) (*pb.L
 	after := in.After
 
 	// Use the query engine for querying asset tags.
-	var assets []map[string]interface{}
-	assets, after, err = h.Indexer.Assets(ctx, p, protoParams(in.FilterParams), after, limit)
+	assets, after, err := h.Indexer.Assets(ctx, p, protoParams(in.FilterParams), after, limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "running asset query")
 	}
 
-	result := make([]*assetResponse, 0, len(assets))
+	result := make([]*pb.Asset, 0, len(assets))
 	for _, a := range assets {
-		var orderedKeys []assetKey
-		keys, ok := a["keys"].([]interface{})
-		if ok {
-			for _, key := range keys {
-				mapKey, ok := key.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				orderedKeys = append(orderedKeys, assetKey{
-					AssetPubkey:         mapKey["asset_pubkey"],
-					RootXPub:            mapKey["root_xpub"],
-					AssetDerivationPath: mapKey["asset_derivation_path"],
-				})
-			}
+		var resp assetResponse
+		err := json.Unmarshal(a, &resp)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshaling indexed asset")
 		}
-		r := &assetResponse{
-			ID:              a["id"],
-			IssuanceProgram: a["issuance_program"],
-			Keys:            orderedKeys,
-			Quorum:          a["quorum"],
-			Definition:      a["definition"],
-			Tags:            a["tags"],
-			IsLocal:         a["is_local"],
-		}
-		if alias, ok := a["alias"].(string); ok && alias != "" {
-			r.Alias = &alias
-		}
-		result = append(result, r)
-	}
 
-	data, err := json.Marshal(httpjson.Array(result))
-	if err != nil {
-		return nil, errors.Wrap(err)
+		var keys []*pb.Asset_Key
+		for _, k := range resp.Keys {
+			adp := make([][]byte, 0, len(k.AssetDerivationPath))
+			for _, p := range k.AssetDerivationPath {
+				adp = append(adp, p)
+			}
+			keys = append(keys, &pb.Asset_Key{
+				RootXpub:            k.RootXPub,
+				AssetPubkey:         k.AssetPubkey,
+				AssetDerivationPath: adp,
+			})
+		}
+
+		result = append(result, &pb.Asset{
+			Id:              resp.ID,
+			Alias:           resp.Alias,
+			IssuanceProgram: resp.IssuanceProgram,
+			Keys:            keys,
+			Quorum:          resp.Quorum,
+			Definition:      resp.Definition,
+			Tags:            resp.Tags,
+			IsLocal:         resp.IsLocal,
+		})
 	}
 
 	out := in
 	out.After = after
 	return &pb.ListAssetsResponse{
-		Items:    data,
+		Items:    result,
 		LastPage: len(result) < limit,
 		Next:     out,
 	}, nil

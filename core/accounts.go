@@ -9,23 +9,24 @@ import (
 	"chain/core/pb"
 	"chain/core/signers"
 	"chain/crypto/ed25519/chainkd"
+	cjson "chain/encoding/json"
 	"chain/errors"
 	"chain/net/http/reqid"
 )
 
 // This type enforces JSON field ordering in API output.
 type accountResponse struct {
-	ID     interface{} `json:"id"`
-	Alias  interface{} `json:"alias"`
-	Keys   interface{} `json:"keys"`
-	Quorum interface{} `json:"quorum"`
-	Tags   interface{} `json:"tags"`
+	ID     string          `json:"id"`
+	Alias  string          `json:"alias"`
+	Keys   []*accountKey   `json:"keys"`
+	Quorum int32           `json:"quorum"`
+	Tags   json.RawMessage `json:"tags"`
 }
 
 type accountKey struct {
-	RootXPub              interface{} `json:"root_xpub"`
-	AccountXPub           interface{} `json:"account_xpub"`
-	AccountDerivationPath interface{} `json:"account_derivation_path"`
+	RootXPub              cjson.HexBytes   `json:"root_xpub"`
+	AccountXPub           cjson.HexBytes   `json:"account_xpub"`
+	AccountDerivationPath []cjson.HexBytes `json:"account_derivation_path"`
 }
 
 func (h *Handler) CreateAccounts(ctx context.Context, in *pb.CreateAccountsRequest) (*pb.CreateAccountsResponse, error) {

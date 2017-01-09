@@ -8,25 +8,26 @@ import (
 
 	"chain/core/pb"
 	"chain/core/signers"
+	cjson "chain/encoding/json"
 	"chain/net/http/reqid"
 )
 
 // This type enforces JSON field ordering in API output.
 type assetResponse struct {
-	ID              interface{} `json:"id"`
-	Alias           *string     `json:"alias"`
-	IssuanceProgram interface{} `json:"issuance_program"`
-	Keys            interface{} `json:"keys"`
-	Quorum          interface{} `json:"quorum"`
-	Definition      interface{} `json:"definition"`
-	Tags            interface{} `json:"tags"`
-	IsLocal         interface{} `json:"is_local"`
+	ID              string          `json:"id"`
+	Alias           string          `json:"alias"`
+	IssuanceProgram cjson.HexBytes  `json:"issuance_program"`
+	Keys            []*assetKey     `json:"keys"`
+	Quorum          int32           `json:"quorum"`
+	Definition      json.RawMessage `json:"definition"`
+	Tags            json.RawMessage `json:"tags"`
+	IsLocal         bool            `json:"is_local"`
 }
 
 type assetKey struct {
-	RootXPub            interface{} `json:"root_xpub"`
-	AssetPubkey         interface{} `json:"asset_pubkey"`
-	AssetDerivationPath interface{} `json:"asset_derivation_path"`
+	RootXPub            cjson.HexBytes   `json:"root_xpub"`
+	AssetPubkey         cjson.HexBytes   `json:"asset_pubkey"`
+	AssetDerivationPath []cjson.HexBytes `json:"asset_derivation_path"`
 }
 
 func (h *Handler) CreateAssets(ctx context.Context, in *pb.CreateAssetsRequest) (*pb.CreateAssetsResponse, error) {

@@ -258,7 +258,7 @@ message ListAccountsQuery {
 }
 
 message ListAccountsResponse {
-	bytes items = 1;
+	repeated Account items = 1;
 	bool last_page = 2;
 	ListAccountsQuery next = 3;
 	Error error = 9;
@@ -272,7 +272,7 @@ message ListAssetsQuery {
 }
 
 message ListAssetsResponse {
-	bytes items = 1;
+	repeated Asset items = 1;
 	bool last_page = 2;
 	ListAssetsQuery next = 3;
 	Error error = 9;
