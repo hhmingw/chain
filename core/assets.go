@@ -14,7 +14,7 @@ import (
 
 // This type enforces JSON field ordering in API output.
 type assetResponse struct {
-	ID              string          `json:"id"`
+	ID              cjson.HexBytes  `json:"id"`
 	Alias           string          `json:"alias"`
 	IssuanceProgram cjson.HexBytes  `json:"issuance_program"`
 	Keys            []*assetKey     `json:"keys"`
@@ -101,7 +101,7 @@ func (h *Handler) CreateAssets(ctx context.Context, in *pb.CreateAssetsRequest) 
 			}
 			responses[i] = &pb.CreateAssetsResponse_Response{
 				Asset: &pb.Asset{
-					Id:              asset.AssetID.String(),
+					Id:              asset.AssetID[:],
 					IssuanceProgram: asset.IssuanceProgram,
 					Keys:            keys,
 					Quorum:          int32(asset.Signer.Quorum),

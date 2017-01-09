@@ -78,7 +78,7 @@ message Asset {
 		bytes asset_pubkey = 2;
 		repeated bytes asset_derivation_path = 3;
 	}
-	string id = 1;
+	bytes id = 1;
 	string alias = 2;
 	bytes issuance_program = 3;
 	repeated Key keys = 4;
