@@ -96,7 +96,7 @@ public class QueryTest {
   public void testTransactionQuery() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "QueryTest.testTransactionQuery.alice";
     String asset = "QueryTest.testTransactionQuery.asset";
     String test = "QueryTest.testTransactionQuery.test";
@@ -191,7 +191,7 @@ public class QueryTest {
   public void testBalanceQuery() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String asset = "QueryTest.testBalanceQuery.asset";
     String alice = "QueryTest.testBalanceQuery.alice";
     String test = "QueryTest.testBalanceQuery.test";
@@ -249,7 +249,7 @@ public class QueryTest {
   public void testUnspentOutputQuery() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String asset = "QueryTest.testUnspentOutputQuery.asset";
     String alice = "QueryTest.testUnspentOutputQuery.alice";
     String test = "QueryTest.testUnspentOutputQuery.test";

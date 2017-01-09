@@ -43,7 +43,7 @@ public class TransactionTest {
   public void testBasicTransaction() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "TransactionTest.testBasicTransaction.alice";
     String bob = "TransactionTest.testBasicTransaction.bob";
     String asset = "TransactionTest.testBasicTransaction.asset";
@@ -52,12 +52,12 @@ public class TransactionTest {
     new Account.Builder().setAlias(alice).addRootXpub(key.xpub).setQuorum(1).create(client);
     new Account.Builder()
         .setAlias(bob)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
     new Asset.Builder()
         .setAlias(asset)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
 
@@ -187,7 +187,7 @@ public class TransactionTest {
     key = MockHsm.Key.create(client);
     key2 = MockHsm.Key.create(client);
     key3 = MockHsm.Key.create(client);
-    HsmSigner.addKeys(Arrays.asList(key, key2, key3), MockHsm.getSignerClient(client));
+    HsmSigner.addKeys(Arrays.asList(key, key2, key3), client);
     String alice = "TransactionTest.testMultiSigTransaction.alice";
     String bob = "TransactionTest.testMultiSigTransaction.bob";
     String asset = "TransactionTest.testMultiSigTransaction.asset";
@@ -255,7 +255,7 @@ public class TransactionTest {
   public void testBatchTransaction() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "TransactionTest.testBatchTransaction.alice";
     String bob = "TransactionTest.testBatchTransaction.bob";
     String asset = "TransactionTest.testBatchTransaction.asset";
@@ -321,7 +321,7 @@ public class TransactionTest {
   public void testAtomicSwap() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "TransactionTest.testAtomicSwap.alice";
     String bob = "TransactionTest.testAtomicSwap.bob";
     String gold = "TransactionTest.testAtomicSwap.gold";
@@ -419,7 +419,7 @@ public class TransactionTest {
   public void testControlPrograms() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "TransactionTest.testControlPrograms.alice";
     String bob = "TransactionTest.testControlPrograms.bob";
     String asset = "TransactionTest.testControlPrograms.asset";
@@ -427,12 +427,12 @@ public class TransactionTest {
     new Account.Builder().setAlias(alice).addRootXpub(key.xpub).setQuorum(1).create(client);
     new Account.Builder()
         .setAlias(bob)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
     new Asset.Builder()
         .setAlias(asset)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
     ControlProgram bobCtrlP =
@@ -483,7 +483,7 @@ public class TransactionTest {
   public void testUnspentOutputs() throws Exception {
     client = TestUtils.generateClient();
     key = MockHsm.Key.create(client);
-    HsmSigner.addKey(key, MockHsm.getSignerClient(client));
+    HsmSigner.addKey(key, client);
     String alice = "TransactionTest.testUnspentOutputs.alice";
     String bob = "TransactionTest.testUnspentOutputs.bob";
     String asset = "TransactionTest.testUnspentOutputs.asset";
@@ -491,12 +491,12 @@ public class TransactionTest {
     new Account.Builder().setAlias(alice).addRootXpub(key.xpub).setQuorum(1).create(client);
     new Account.Builder()
         .setAlias(bob)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
     new Asset.Builder()
         .setAlias(asset)
-        .setRootXpubs(Arrays.asList(key.xpub))
+        .addRootXpub(key.xpub)
         .setQuorum(1)
         .create(client);
 

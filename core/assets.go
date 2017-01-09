@@ -13,6 +13,16 @@ import (
 	"chain/net/http/reqid"
 )
 
+type yesMarshal bool
+
+func (y *yesMarshal) UnmarshalText(text []byte) error {
+	*y = false
+	if string(text) == "yes" {
+		*y = true
+	}
+	return nil
+}
+
 // This type enforces JSON field ordering in API output.
 type assetResponse struct {
 	ID              cjson.HexBytes  `json:"id"`
@@ -22,7 +32,7 @@ type assetResponse struct {
 	Quorum          int32           `json:"quorum"`
 	Definition      json.RawMessage `json:"definition"`
 	Tags            json.RawMessage `json:"tags"`
-	IsLocal         bool            `json:"is_local"`
+	IsLocal         yesMarshal      `json:"is_local"`
 }
 
 type assetKey struct {

@@ -210,7 +210,7 @@ func (h *Handler) ListAssets(ctx context.Context, in *pb.ListAssetsQuery) (*pb.L
 			Quorum:          resp.Quorum,
 			Definition:      resp.Definition,
 			Tags:            resp.Tags,
-			IsLocal:         resp.IsLocal,
+			IsLocal:         bool(resp.IsLocal),
 		})
 	}
 
