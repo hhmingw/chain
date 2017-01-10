@@ -54,7 +54,7 @@ var errBadAssetID = errors.New("asset ID does not match other issuance parameter
 
 func NewSpendInput(txhash Hash, index uint32, arguments [][]byte, assetID AssetID, amount uint64, controlProgram, referenceData []byte) *TxInput {
 	const (
-		vmver = 1
+		vmver    = 1
 		assetver = 1
 	)
 	oc := OutputCommitment{
@@ -69,9 +69,9 @@ func NewSpendInput(txhash Hash, index uint32, arguments [][]byte, assetID AssetI
 		AssetVersion:  assetver,
 		ReferenceData: referenceData,
 		TypedInput: &SpendInput{
-			OutputID: ComputeOutputID(txhash, index, oc.Hash(assetver)),
+			OutputID:         ComputeOutputID(txhash, index, oc.Hash(assetver)),
 			OutputCommitment: oc,
-			Arguments: arguments,
+			Arguments:        arguments,
 		},
 	}
 }

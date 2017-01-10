@@ -126,10 +126,14 @@ func (oc *OutputCommitment) writeTo(w io.Writer, assetVersion uint64) {
 	blockchain.WriteVarstr31(w, b.Bytes()) // TODO(bobg): check and return error
 }
 
+func (to *TxOutput) CommitmentHash() Hash {
+	return to.OutputCommitment.Hash(to.AssetVersion)
+}
+
 func (oc *OutputCommitment) Hash(assetVersion uint64) (outputhash Hash) {
 	h := sha3pool.Get256()
 	defer sha3pool.Put256(h)
-	oc.writeTo(h, assetVersion) // TODO(oleg): get rid of this assetVersion parameter to actually write all the bytes 
+	oc.writeTo(h, assetVersion) // TODO(oleg): get rid of this assetVersion parameter to actually write all the bytes
 	h.Read(outputhash[:])
 	return outputhash
 }
