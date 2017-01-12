@@ -51,8 +51,14 @@ func (m *Manager) indexAnnotatedAccount(ctx context.Context, a *Account) error {
 	})
 }
 
-type output struct {
+type refoutput struct {
 	state.Output
+	txHash       Hash
+	outputIndex  uint32
+}
+
+type output struct {
+	outputWithOutpoint
 	AccountID string
 	keyIndex  uint64
 }
@@ -71,11 +77,13 @@ func (m *Manager) indexAccountUTXOs(ctx context.Context, b *bc.Block) error {
 	for i, tx := range b.Transactions {
 		blockPositions[tx.Hash] = uint32(i)
 		for j, out := range tx.Outputs {
-			stateOutput := &state.Output{
-				TxOutput: *out,
-				Outpoint: bc.Outpoint{Hash: tx.Hash, Index: uint32(j)},
+			out := &refoutput{
+				TxOutput:    *out,
+				OutputID:    tx.OutputID(j),
+				txHash:      tx.Hash,
+				outputIndex: j,
 			}
-			outs = append(outs, stateOutput)
+			outs = append(outs, out)
 		}
 	}
 	accOuts, err := m.loadAccountInfo(ctx, outs)
@@ -89,24 +97,22 @@ func (m *Manager) indexAccountUTXOs(ctx context.Context, b *bc.Block) error {
 	}
 
 	// Delete consumed account UTXOs.
-	deltxhash, delindex := prevoutDBKeys(b.Transactions...)
+	deloutputids := prevoutDBKeys(b.Transactions...)
 	const delQ = `
 		DELETE FROM account_utxos
-		WHERE (tx_hash, index) IN (SELECT unnest($1::text[]), unnest($2::integer[]))
+		WHERE output_id IN (SELECT unnest($1::text[]))
 	`
-	_, err = m.db.Exec(ctx, delQ, deltxhash, delindex)
+	_, err = m.db.Exec(ctx, delQ, deloutputids)
 	return errors.Wrap(err, "deleting spent account utxos")
 }
 
-func prevoutDBKeys(txs ...*bc.Tx) (txhash pq.StringArray, index pg.Uint32s) {
+func prevoutDBKeys(txs ...*bc.Tx) (outputIDs pq.StringArray) {
 	for _, tx := range txs {
 		for _, in := range tx.Inputs {
 			if in.IsIssuance() {
 				continue
 			}
-			o := in.OutputID()
-			txhash = append(txhash, o.Hash.String())
-			index = append(index, o.Index)
+			outputIDs = append(outputIDs, in.OutputID().String())
 		}
 	}
 	return
@@ -115,8 +121,8 @@ func prevoutDBKeys(txs ...*bc.Tx) (txhash pq.StringArray, index pg.Uint32s) {
 // loadAccountInfo turns a set of state.Outputs into a set of
 // outputs by adding account annotations.  Outputs that can't be
 // annotated are excluded from the result.
-func (m *Manager) loadAccountInfo(ctx context.Context, outs []*state.Output) ([]*output, error) {
-	outsByScript := make(map[string][]*state.Output, len(outs))
+func (m *Manager) loadAccountInfo(ctx context.Context, outs []*refoutput) ([]*output, error) {
+	outsByScript := make(map[string][]*refoutput, len(outs))
 	for _, out := range outs {
 		scriptStr := string(out.ControlProgram)
 		outsByScript[scriptStr] = append(outsByScript[scriptStr], out)
@@ -137,7 +143,7 @@ func (m *Manager) loadAccountInfo(ctx context.Context, outs []*state.Output) ([]
 	err := pg.ForQueryRows(ctx, m.db, q, scripts, func(accountID string, keyIndex uint64, program []byte) {
 		for _, out := range outsByScript[string(program)] {
 			newOut := &output{
-				Output:    *out,
+				refoutput: *out,
 				AccountID: accountID,
 				keyIndex:  keyIndex,
 			}
@@ -158,6 +164,7 @@ func (m *Manager) upsertConfirmedAccountOutputs(ctx context.Context, outs []*out
 	var (
 		txHash    pq.StringArray
 		index     pg.Uint32s
+		outputID  pq.StringArray
 		assetID   pq.StringArray
 		amount    pq.Int64Array
 		accountID pq.StringArray
@@ -165,8 +172,9 @@ func (m *Manager) upsertConfirmedAccountOutputs(ctx context.Context, outs []*out
 		program   pq.ByteaArray
 	)
 	for _, out := range outs {
-		txHash = append(txHash, out.Outpoint.Hash.String())
-		index = append(index, out.Outpoint.Index)
+		txHash = append(txHash, out.txHash.String())
+		index = append(index, out.outputIndex)
+		outputID = append(outputID, out.OutputID.String())
 		assetID = append(assetID, out.AssetID.String())
 		amount = append(amount, int64(out.Amount))
 		accountID = append(accountID, out.AccountID)
@@ -175,15 +183,16 @@ func (m *Manager) upsertConfirmedAccountOutputs(ctx context.Context, outs []*out
 	}
 
 	const q = `
-		INSERT INTO account_utxos (tx_hash, index, asset_id, amount, account_id, control_program_index,
+		INSERT INTO account_utxos (tx_hash, index, output_id, asset_id, amount, account_id, control_program_index,
 			control_program, confirmed_in)
-		SELECT unnest($1::text[]), unnest($2::bigint[]), unnest($3::text[]),  unnest($4::bigint[]),
-			   unnest($5::text[]), unnest($6::bigint[]), unnest($7::bytea[]), $8
+		SELECT unnest($1::text[]), unnest($2::bigint[]), unnest($3::text[]), unnest($4::text[]),  unnest($5::bigint[]),
+			   unnest($6::text[]), unnest($7::bigint[]), unnest($8::bytea[]), $9
 		ON CONFLICT (tx_hash, index) DO NOTHING
 	`
 	_, err := m.db.Exec(ctx, q,
 		txHash,
 		index,
+		outputID,
 		assetID,
 		amount,
 		accountID,

@@ -248,6 +248,14 @@ func (tx *TxData) HashForSig(idx int) Hash {
 	return NewSigHasher(tx).Hash(idx)
 }
 
+func (tx *Tx) OutputID(outputIndex int) OutputID {
+	return ComputeOutputID(tx.Hash, uint32(outputIndex), tx.Outputs[outputIndex].CommitmentHash())
+}
+
+func (tx *TxData) OutputID(outputIndex int) OutputID {
+	return ComputeOutputID(tx.Hash(), uint32(outputIndex), tx.Outputs[outputIndex].CommitmentHash())
+}
+
 // SigHasher caches a txhash for reuse with multiple inputs.
 type SigHasher struct {
 	txData *TxData
