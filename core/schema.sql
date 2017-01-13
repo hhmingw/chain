@@ -196,7 +196,7 @@ CREATE TABLE account_utxos (
     control_program_index bigint NOT NULL,
     control_program bytea NOT NULL,
     confirmed_in bigint NOT NULL,
-    output_id text NOT NULL
+    unspent_id text NOT NULL
 );
 
 
@@ -565,11 +565,11 @@ ALTER TABLE ONLY account_utxos
 
 
 --
--- Name: account_utxos account_utxos_unique_output_id; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: account_utxos account_utxos_unique_unspent_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY account_utxos
-    ADD CONSTRAINT account_utxos_unique_output_id UNIQUE (output_id);
+    ADD CONSTRAINT account_utxos_unique_unspent_id UNIQUE (unspent_id);
 
 
 --
@@ -896,5 +896,5 @@ insert into migrations (filename, hash) values ('2016-11-22.0.account.utxos-inde
 insert into migrations (filename, hash) values ('2016-11-23.0.query.jsonb-path-ops.sql', 'adb15b9a6b7b223a17dbfd5f669e44c500b343568a563f87e1ae67ba0f938d55');
 insert into migrations (filename, hash) values ('2016-11-28.0.core.submitted-txs-hash.sql', 'cabbd7fd79a2b672b2d3c854783bde3b8245fe666c50261c3335a0c0501ff2ea');
 insert into migrations (filename, hash) values ('2017-01-05.0.core.rename_block_key.sql', 'ba6a62e498236ec9d2f13238a945829a5cab83f897068fef57a2c152a2e36037');
-insert into migrations (filename, hash) values ('2017-01-10.0.core.add-outputid-to-outputs.sql', 'e2374d8e2bf71cf71a24a49b0715968daf392b4f8bbd09eb3c2b47d006cfe8f1');
-insert into migrations (filename, hash) values ('2017-01-10.1.core.add-outputid-to-utxos.sql', 'd7ca93573435b7802de343ae55d14c071e7021d5634a2f58def2558a30ad67af');
+insert into migrations (filename, hash) values ('2017-01-10.0.core.add-output-id-to-outputs.sql', 'e2374d8e2bf71cf71a24a49b0715968daf392b4f8bbd09eb3c2b47d006cfe8f1');
+insert into migrations (filename, hash) values ('2017-01-10.1.core.add-unspent-id-to-utxos.sql', 'eef2320d44b2ace7f5456feed21884db2073a41b63da65742d28b2a0166ffbd0');

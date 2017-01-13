@@ -75,12 +75,12 @@ var migrations = []migration{
 	{Name: "2017-01-05.0.core.rename_block_key.sql", SQL: `
 		ALTER TABLE config RENAME COLUMN block_xpub TO block_pub;
 	`},
-	{Name: "2017-01-10.0.core.add-outputid-to-outputs.sql", SQL: `
+	{Name: "2017-01-10.0.core.add-output-id-to-outputs.sql", SQL: `
 		ALTER TABLE annotated_outputs ADD COLUMN output_id text NOT NULL;
 		ALTER TABLE ONLY annotated_outputs ADD CONSTRAINT annotated_outputs_unique_output_id UNIQUE (output_id);
-	`},
-	{Name: "2017-01-10.1.core.add-outputid-to-utxos.sql", SQL: `
 		ALTER TABLE account_utxos ADD COLUMN output_id text NOT NULL;
 		ALTER TABLE ONLY account_utxos ADD CONSTRAINT account_utxos_unique_output_id UNIQUE (output_id);
+		ALTER TABLE account_utxos ADD COLUMN unspent_id text NOT NULL;
+		ALTER TABLE ONLY account_utxos ADD CONSTRAINT account_utxos_unique_unspent_id UNIQUE (unspent_id);
 	`},
 }

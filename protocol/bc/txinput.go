@@ -69,7 +69,7 @@ func NewSpendInput(txhash Hash, index uint32, arguments [][]byte, assetID AssetI
 		AssetVersion:  assetver,
 		ReferenceData: referenceData,
 		TypedInput: &SpendInput{
-			OutputID:         ComputeOutputID(txhash, index, oc.Hash(assetver)),
+			OutputID:         ComputeOutputID(txhash, index),
 			OutputCommitment: oc,
 			Arguments:        arguments,
 		},
@@ -301,7 +301,7 @@ func (t *TxInput) writeTo(w io.Writer, serflags uint8) {
 	blockchain.WriteVarint63(w, t.AssetVersion) // TODO(bobg): check and return error
 	buf := bufpool.Get()
 	defer bufpool.Put(buf)
-	t.WriteInputCommitment(buf)
+	t.WriteInputCommitment(buf, serflags)
 	blockchain.WriteVarstr31(w, buf.Bytes())
 	blockchain.WriteVarstr31(w, t.ReferenceData)
 	if serflags&SerWitness != 0 {
@@ -311,7 +311,7 @@ func (t *TxInput) writeTo(w io.Writer, serflags uint8) {
 	}
 }
 
-func (t *TxInput) WriteInputCommitment(w io.Writer) {
+func (t *TxInput) WriteInputCommitment(w io.Writer, serflags uint8) {
 	if t.AssetVersion == 1 {
 		switch inp := t.TypedInput.(type) {
 		case *IssuanceInput:
@@ -324,7 +324,12 @@ func (t *TxInput) WriteInputCommitment(w io.Writer) {
 		case *SpendInput:
 			w.Write([]byte{1}) // spend type
 			inp.OutputID.WriteTo(w)
-			inp.OutputCommitment.writeTo(w, t.AssetVersion)
+			if serflags&SerPrevout != 0 {
+				inp.OutputCommitment.writeTo(w, t.AssetVersion)
+			} else {
+				prevouthash := inp.OutputCommitment.Hash(t.AssetVersion)
+				w.Write(prevouthash[:])
+			}
 		}
 	}
 }
