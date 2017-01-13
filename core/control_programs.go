@@ -19,12 +19,13 @@ func (h *Handler) CreateControlPrograms(ctx context.Context, in *pb.CreateContro
 			ctx = reqid.NewSubContext(ctx, reqid.New())
 			defer wg.Done()
 			defer batchRecover(func(err error) {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.CreateControlProgramsResponse_Response{Error: protobufErr(detailedErr)}
+				responses[i] = &pb.CreateControlProgramsResponse_Response{Error: protobufErr(err)}
 			})
 			switch in.Requests[i].GetType().(type) {
 			case (*pb.CreateControlProgramsRequest_Request_Account):
 				responses[i] = h.createAccountControlProgram(ctx, in.Requests[i].GetAccount())
+			default:
+				responses[i] = &pb.CreateControlProgramsResponse_Response{Error: protobufErr(errBadAction)}
 			}
 		}(i)
 	}
@@ -40,8 +41,7 @@ func (h *Handler) createAccountControlProgram(ctx context.Context, in *pb.Create
 	if accountID == "" {
 		acc, err := h.Accounts.FindByAlias(ctx, in.GetAccountAlias())
 		if err != nil {
-			detailedErr, _ := errInfo(err)
-			resp.Error = protobufErr(detailedErr)
+			resp.Error = protobufErr(err)
 			return resp
 		}
 		accountID = acc.ID
@@ -49,8 +49,7 @@ func (h *Handler) createAccountControlProgram(ctx context.Context, in *pb.Create
 
 	controlProgram, err := h.Accounts.CreateControlProgram(ctx, accountID, false)
 	if err != nil {
-		detailedErr, _ := errInfo(err)
-		resp.Error = protobufErr(detailedErr)
+		resp.Error = protobufErr(err)
 		return resp
 	}
 

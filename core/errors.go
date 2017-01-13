@@ -181,17 +181,19 @@ func errInfoBodyList(errs []error) (a []detailedError) {
 	return a
 }
 
-func protobufErr(err detailedError) *pb.Error {
+func protobufErr(err error) *pb.Error {
+	dErr, _ := errInfo(err)
+
 	var data []byte
 
-	if len(err.Data) > 0 {
-		data, _ = json.Marshal(err.Data)
+	if len(dErr.Data) > 0 {
+		data, _ = json.Marshal(dErr.Data)
 	}
 	return &pb.Error{
-		Code:      err.ChainCode,
-		Message:   err.Message,
-		Detail:    err.Detail,
+		Code:      dErr.ChainCode,
+		Message:   dErr.Message,
+		Detail:    dErr.Detail,
 		Data:      data,
-		Temporary: err.Temporary,
+		Temporary: dErr.Temporary,
 	}
 }

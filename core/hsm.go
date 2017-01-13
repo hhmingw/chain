@@ -71,8 +71,7 @@ func (h *Handler) SignTxs(ctx context.Context, in *pb.SignTxsRequest) (*pb.TxsRe
 	for i, tx := range in.Transactions {
 		err := txbuilder.Sign(ctx, tx, xpubs, h.mockhsmSignTemplate)
 		if err != nil {
-			info, _ := errInfo(err)
-			responses[i] = &pb.TxsResponse_Response{Error: protobufErr(info)}
+			responses[i] = &pb.TxsResponse_Response{Error: protobufErr(err)}
 		} else {
 			responses[i] = &pb.TxsResponse_Response{Template: tx}
 		}

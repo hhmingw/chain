@@ -99,14 +99,12 @@ func (h *Handler) BuildTxs(ctx context.Context, in *pb.BuildTxsRequest) (*pb.Txs
 			subctx := reqid.NewSubContext(ctx, reqid.New())
 			defer wg.Done()
 			defer batchRecover(func(err error) {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.TxsResponse_Response{Error: protobufErr(detailedErr)}
+				responses[i] = &pb.TxsResponse_Response{Error: protobufErr(err)}
 			})
 
 			tmpl, err := h.buildSingle(subctx, in.Requests[i])
 			if err != nil {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.TxsResponse_Response{Error: protobufErr(detailedErr)}
+				responses[i] = &pb.TxsResponse_Response{Error: protobufErr(err)}
 			} else {
 				responses[i] = tmpl
 			}
@@ -303,14 +301,12 @@ func (h *Handler) SubmitTxs(ctx context.Context, in *pb.SubmitTxsRequest) (*pb.S
 			subctx := reqid.NewSubContext(ctx, reqid.New())
 			defer wg.Done()
 			defer batchRecover(func(err error) {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.SubmitTxsResponse_Response{Error: protobufErr(detailedErr)}
+				responses[i] = &pb.SubmitTxsResponse_Response{Error: protobufErr(err)}
 			})
 
 			tx, err := h.submitSingle(subctx, in.Transactions[i], in.WaitUntil)
 			if err != nil {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.SubmitTxsResponse_Response{Error: protobufErr(detailedErr)}
+				responses[i] = &pb.SubmitTxsResponse_Response{Error: protobufErr(err)}
 			} else {
 				responses[i] = tx
 			}

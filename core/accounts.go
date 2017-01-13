@@ -11,6 +11,7 @@ import (
 	"chain/crypto/ed25519/chainkd"
 	cjson "chain/encoding/json"
 	"chain/errors"
+	"chain/net/http/httpjson"
 	"chain/net/http/reqid"
 )
 
@@ -40,36 +41,34 @@ func (h *Handler) CreateAccounts(ctx context.Context, in *pb.CreateAccountsReque
 			subctx := reqid.NewSubContext(ctx, reqid.New())
 			defer wg.Done()
 			defer batchRecover(func(err error) {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAccountsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 			})
 
 			var tags map[string]interface{}
-			err := json.Unmarshal(req.Tags, &tags)
-			if err != nil {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.CreateAccountsResponse_Response{
-					Error: protobufErr(detailedErr),
+			if len(req.Tags) > 0 {
+				err := json.Unmarshal(req.Tags, &tags)
+				if err != nil {
+					responses[i] = &pb.CreateAccountsResponse_Response{
+						Error: protobufErr(httpjson.ErrBadRequest),
+					}
+					return
 				}
-				return
 			}
 
 			xpubs, err := bytesToKeys(req.RootXpubs)
 			if err != nil {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAccountsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 				return
 			}
 
 			acc, err := h.Accounts.Create(subctx, xpubs, int(req.Quorum), req.Alias, tags, req.ClientToken)
 			if err != nil {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAccountsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 				return
 			}

@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"encoding/hex"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +25,7 @@ type apiAuthn struct {
 	tokens *accesstoken.CredentialStore
 	// alternative authentication mechanism,
 	// used when no basic auth creds are provided.
-	alt func(*http.Request) bool
+	alt func(context.Context) bool
 
 	tokenMu  sync.Mutex // protects the following
 	tokenMap map[string]tokenResult
@@ -40,6 +39,9 @@ type tokenResult struct {
 func (a *apiAuthn) authRPC(ctx context.Context, method string) (context.Context, error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
+		if a.alt(ctx) {
+			return ctx, nil
+		}
 		return ctx, errNotAuthenticated
 	}
 
@@ -47,9 +49,11 @@ func (a *apiAuthn) authRPC(ctx context.Context, method string) (context.Context,
 	if len(md["username"]) > 0 && len(md["password"]) > 0 {
 		user = md["username"][0]
 		pw = md["password"][0]
+	} else if len(md["username"]) == 0 && len(md["password"]) == 0 && a.alt(ctx) {
+		return ctx, nil
 	}
 
-	typ := "app"
+	typ := "client"
 
 	if strings.HasPrefix(method, "/pb.Node/") || strings.HasPrefix(method, "/pb.Signer/") {
 		typ = "network"

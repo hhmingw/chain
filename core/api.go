@@ -66,7 +66,7 @@ type Handler struct {
 	Submitter     txbuilder.Submitter
 	DB            pg.DB
 	Addr          string
-	AltAuth       func(*http.Request) bool
+	AltAuth       func(context.Context) bool
 	Signer        func(context.Context, *bc.Block) ([]byte, error)
 	RequestLimits []RequestLimit
 
@@ -91,6 +91,7 @@ func (h *Handler) Server(crt *tls.Certificate) *grpc.Server {
 	h.auth = &apiAuthn{
 		tokens:   h.AccessTokens,
 		tokenMap: make(map[string]tokenResult),
+		alt:      h.AltAuth,
 	}
 
 	for _, lim := range h.RequestLimits {
@@ -112,6 +113,7 @@ func (h *Handler) Server(crt *tls.Certificate) *grpc.Server {
 	if h.Config != nil && h.Config.IsSigner {
 		pb.RegisterSignerServer(srv, h)
 	}
+	pb.RegisterHSMServer(srv, h)
 	pb.RegisterAppServer(srv, h)
 
 	return srv
@@ -216,8 +218,8 @@ func (h *Handler) unaryInterceptor(ctx libcontext.Context, req interface{}, info
 	}
 	resp, err := handler(ctx, req)
 	if err != nil {
-		detailedErr, _ := errInfo(err)
-		resp = &pb.ErrorResponse{Error: protobufErr(detailedErr)}
+		logHTTPError(ctx, err)
+		resp = &pb.ErrorResponse{Error: protobufErr(err)}
 	}
 	return resp, nil
 }

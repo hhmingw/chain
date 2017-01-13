@@ -9,6 +9,7 @@ import (
 	"chain/core/pb"
 	"chain/core/signers"
 	cjson "chain/encoding/json"
+	"chain/net/http/httpjson"
 	"chain/net/http/reqid"
 )
 
@@ -40,35 +41,35 @@ func (h *Handler) CreateAssets(ctx context.Context, in *pb.CreateAssetsRequest) 
 			subctx := reqid.NewSubContext(ctx, reqid.New())
 			defer wg.Done()
 			defer batchRecover(func(err error) {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAssetsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 			})
 
 			var tags, def map[string]interface{}
-			err := json.Unmarshal(in.Requests[i].Tags, &tags)
-			if err != nil {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.CreateAssetsResponse_Response{
-					Error: protobufErr(detailedErr),
+			if len(in.Requests[i].Tags) > 0 {
+				err := json.Unmarshal(in.Requests[i].Tags, &tags)
+				if err != nil {
+					responses[i] = &pb.CreateAssetsResponse_Response{
+						Error: protobufErr(httpjson.ErrBadRequest),
+					}
+					return
 				}
-				return
 			}
-			err = json.Unmarshal(in.Requests[i].Definition, &def)
-			if err != nil {
-				detailedErr, _ := errInfo(err)
-				responses[i] = &pb.CreateAssetsResponse_Response{
-					Error: protobufErr(detailedErr),
+			if len(in.Requests[i].Definition) > 0 {
+				err := json.Unmarshal(in.Requests[i].Definition, &def)
+				if err != nil {
+					responses[i] = &pb.CreateAssetsResponse_Response{
+						Error: protobufErr(httpjson.ErrBadRequest),
+					}
+					return
 				}
-				return
 			}
 
 			xpubs, err := bytesToKeys(in.Requests[i].RootXpubs)
 			if err != nil {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAssetsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 				return
 			}
@@ -83,9 +84,8 @@ func (h *Handler) CreateAssets(ctx context.Context, in *pb.CreateAssetsRequest) 
 				in.Requests[i].ClientToken,
 			)
 			if err != nil {
-				detailedErr, _ := errInfo(err)
 				responses[i] = &pb.CreateAssetsResponse_Response{
-					Error: protobufErr(detailedErr),
+					Error: protobufErr(err),
 				}
 				return
 			}
@@ -99,9 +99,16 @@ func (h *Handler) CreateAssets(ctx context.Context, in *pb.CreateAssetsRequest) 
 					AssetDerivationPath: path,
 				})
 			}
+
+			var aliasStr string
+			if asset.Alias != nil {
+				aliasStr = *asset.Alias
+			}
+
 			responses[i] = &pb.CreateAssetsResponse_Response{
 				Asset: &pb.Asset{
 					Id:              asset.AssetID[:],
+					Alias:           aliasStr,
 					IssuanceProgram: asset.IssuanceProgram,
 					Keys:            keys,
 					Quorum:          int32(asset.Signer.Quorum),
